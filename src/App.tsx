@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 type GameState = 'START' | 'SHOWING' | 'INPUT' | 'RESULT';
@@ -6,17 +6,17 @@ type GameState = 'START' | 'SHOWING' | 'INPUT' | 'RESULT';
 interface PanelConfig {
   id: number;
   name: string;
-  freq: number; // Web Audio API 用の周波数(Hz)
+  freq: number;
 }
 
 const PANELS: PanelConfig[] = [
-  { id: 0, name: 'red', freq: 329.63 },    // ミ (E4)
-  { id: 1, name: 'blue', freq: 261.63 },   // ド (C4)
-  { id: 2, name: 'yellow', freq: 392.00 }, // ソ (G4)
-  { id: 3, name: 'green', freq: 523.25 },  // 高いド (C5)
+  { id: 0, name: 'red', freq: 329.63 },
+  { id: 1, name: 'blue', freq: 261.63 },
+  { id: 2, name: 'yellow', freq: 392.00 },
+  { id: 3, name: 'green', freq: 523.25 },
 ];
 
-export function App() {
+export default function App() {
   const [gameState, setGameState] = useState<GameState>('START');
   const [sequence, setSequence] = useState<number[]>([]);
   const [userStep, setUserStep] = useState<number>(0);
@@ -30,7 +30,6 @@ export function App() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const timersRef = useRef<number[]>([]);
 
-  // 予約中のタイマーをすべてクリア
   const clearAllTimers = () => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
     timersRef.current = [];
@@ -40,7 +39,6 @@ export function App() {
     return () => clearAllTimers();
   }, []);
 
-  // Web Audio API で音を鳴らす
   const playTone = (freq: number, duration = 0.25, type: OscillatorType = 'sine') => {
     if (!soundEnabled) return;
     try {
@@ -67,11 +65,10 @@ export function App() {
       osc.start();
       osc.stop(ctx.currentTime + duration);
     } catch {
-      // 音声再生非対応環境でもエラーで止まらないように無視
+      // 無視
     }
   };
 
-  // パネルを光らせる演出
   const flashPanel = (panelId: number, durationMs = 350) => {
     setActivePanel(panelId);
     playTone(PANELS[panelId].freq, durationMs / 1000);
@@ -81,14 +78,12 @@ export function App() {
     timersRef.current.push(timer);
   };
 
-  // お手本のシーケンスを順番に再生
   const playSequence = (seq: number[], currentLevel: number) => {
     clearAllTimers();
     setGameState('SHOWING');
     setActivePanel(null);
     setStatusMessage('よく見て覚えてね！');
 
-    // レベルが上がるにつれて少しずつテンポアップ
     const stepInterval = Math.max(380, 680 - currentLevel * 25);
     const flashDuration = Math.max(220, 420 - currentLevel * 15);
 
@@ -107,7 +102,6 @@ export function App() {
     timersRef.current.push(endTimer);
   };
 
-  // ゲーム開始
   const startGame = () => {
     clearAllTimers();
     const firstPanel = Math.floor(Math.random() * 4);
@@ -119,13 +113,11 @@ export function App() {
     playSequence(initialSeq, 1);
   };
 
-  // プレイヤーのパネルタップ処理
   const handlePanelClick = (panelId: number) => {
     if (gameState !== 'INPUT') return;
 
     flashPanel(panelId, 240);
 
-    // 不正解チェック
     if (panelId !== sequence[userStep]) {
       clearAllTimers();
       playTone(140, 0.5, 'sawtooth');
@@ -138,11 +130,9 @@ export function App() {
       return;
     }
 
-    // 1ステップ正解
     const nextStep = userStep + 1;
     setScore((prev) => prev + 10);
 
-    // 現在のレベルの全順番をクリアした場合
     if (nextStep === sequence.length) {
       const nextLevel = level + 1;
       const bonus = level * 20;
@@ -219,7 +209,6 @@ export function App() {
               {statusMessage}
             </div>
 
-            {/* 4色カラーパネルグリッド */}
             <div className="panel-grid">
               {PANELS.map((panel) => (
                 <button
@@ -255,5 +244,3 @@ export function App() {
     </div>
   );
 }
-
-export default App;
